@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { loginUser } from '../firebase/services';
+import { supabase } from '../supabaseClient';
 import { Building2, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -10,23 +10,25 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const handle = async (e) => {
-    e.preventDefault();
-    if (!email || !password) return toast.error('Fill all fields');
-    setLoading(true);
-    try {
-      await loginUser(email, password);
-      toast.success('Welcome back!');
-    } catch (err) {
-      const msgs = {
-        'auth/user-not-found': 'No account with this email',
-        'auth/wrong-password': 'Wrong password',
-        'auth/invalid-email':  'Invalid email address',
-        'auth/too-many-requests': 'Too many attempts. Try later.',
-      };
-      toast.error(msgs[err.code] || 'Login failed');
-    }
-    setLoading(false);
-  };
+  e.preventDefault();
+  if (!email || !password) return toast.error('Fill all fields');
+
+  setLoading(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    toast.error(error.message);
+  } else {
+    toast.success('Welcome back!');
+    window.location.href = "/dashboard";
+  }
+
+  setLoading(false);
+};
 
   return (
     <div style={{
